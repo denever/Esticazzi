@@ -27,4 +27,3 @@ for new in news_feed['data']:
         print new['from']['name'], '\'s status:', new['message']
     if new.has_key('caption'):
         print new['from']['name'],'posted a', new['type'], new['caption']
-
