@@ -19,17 +19,17 @@ def fg256(x, y):
 
 def print_post(post):
     p = u''
-    p += fg256(CYAN, post['from']['name'])   
-    
+    p += fg256(CYAN, post['from']['name'])
+
     try: p += ' ' + fg256(BASE0, post['status_type'])
     except KeyError: pass
-     
+
     try: p += '\n' + post['message']
     except KeyError: pass
-    
+
     try: p += '\n' + fg256(YELLOW, post['name'])
     except KeyError: pass
-    
+
     try: p += '\n' + fg256(BASE01, post['description'])
     except KeyError: pass
 
@@ -38,38 +38,51 @@ def print_post(post):
 
     try: comments = len(post['comments']['data'])
     except: comments = 0
-    
+
     p += '\n'
 
-    p += fg256(BASE0, u'Likes: ') 
+    p += fg256(BASE0, u'Likes: ')
     p += fg256(GREEN, str(likes))
-    p += fg256(BASE0, u' - Comments: ') 
+    p += fg256(BASE0, u' - Comments: ')
     p += fg256(GREEN, str(comments))
 
     print p + '\n'
+
+def prompt_oauth_access_token():
+    oauth_access_token = raw_input('Please insert your oauth access token:')
+    config = ConfigParser.ConfigParser()
+    config.add_section('auth')
+    config.set('auth','oauth_token', oauth_access_token)
+
+    with open(os.path.expanduser('~/.sticazzi.cfg'), 'wb') as configfile:
+        config.write(configfile)
+    return oauth_access_token
 
 if __name__ == '__main__':
     import ConfigParser
 
     config = ConfigParser.ConfigParser()
-    oauth_access_token = None
 
+    oauth_access_token = None
     try:
         config.read(os.path.expanduser('~/.sticazzi.cfg'))
         oauth_access_token = config.get('auth', 'oauth_token')
     except:
-        oauth_access_token = raw_input('Please insert your oauth access token:')
-        config = ConfigParser.ConfigParser()
-        config.add_section('auth')
-        config.set('auth','oauth_token', oauth_access_token)
-
-        with open(os.path.expanduser('~/.sticazzi.cfg'), 'wb') as configfile:
-            config.write(configfile)
+        prompt_oauth_access_token()
 
     if oauth_access_token is None:
         sys.exit(1)
 
-    graph = facebook.GraphAPI(oauth_access_token)
-    news_feed = graph.get_connections("me", "home")
-    for new in news_feed['data']:
-        print_post(new)
+    news_feed = dict()
+    try:
+        graph = facebook.GraphAPI(oauth_access_token)
+        news_feed = graph.get_connections("me", "home")
+    except facebook.GraphAPIError, ex:
+        print ex
+        oauth_access_token = prompt_oauth_access_token()
+        graph = facebook.GraphAPI(oauth_access_token)
+        news_feed = graph.get_connections("me", "home")
+
+    if news_feed.has_key('data'):
+        for new in news_feed['data']:
+            print_post(new)
