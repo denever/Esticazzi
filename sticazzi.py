@@ -24,3 +24,5 @@ news_feed = graph.get_connections("me", "home")
 for new in news_feed['data']:
     if new.has_key('caption'):
         print new['from']['name'],'posted a', new['type'], new['caption']
+    if new.has_key('message'):
+        print new['from']['name'], 'status', new['message']
