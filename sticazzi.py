@@ -1,5 +1,6 @@
 import facebook
 import ConfigParser, os, sys
+import pprint
 
 config = ConfigParser.ConfigParser()
 oauth_access_token = None
@@ -22,7 +23,8 @@ if oauth_access_token is None:
 graph = facebook.GraphAPI(oauth_access_token)
 news_feed = graph.get_connections("me", "home")
 for new in news_feed['data']:
+    if new['type'] == 'status':
+        print new['from']['name'], '\'s status:', new['message']
     if new.has_key('caption'):
         print new['from']['name'],'posted a', new['type'], new['caption']
-    if new.has_key('message'):
-        print new['from']['name'], 'status', new['message']
+
