@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+#
+# Eeeesticazzi.
+#
+
 import os
 import sys
 import facebook
