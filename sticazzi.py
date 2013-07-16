@@ -7,6 +7,7 @@ import os
 import sys
 import facebook
 import textwrap
+import signal
 
 BASE0=244
 BASE01=240
@@ -18,6 +19,10 @@ VIOLET=61
 BLUE=33
 CYAN=37
 GREEN=64
+
+def fetch_user_stream_data(oauth_access_token):
+    graph = facebook.GraphAPI(oauth_access_token)
+    return graph.get_connections('me', 'home')
 
 def fg256(x, y):
     return u'\033[38;5;%dm%s\033[0m' % (x, y)
@@ -54,7 +59,7 @@ def print_post(post):
     print p + '\n'
 
 def prompt_oauth_access_token():
-    oauth_access_token = raw_input('Please insert your oauth access token:')
+    oauth_access_token = raw_input('Please insert your oauth access token: ')
     config = ConfigParser.ConfigParser()
     config.add_section('auth')
     config.set('auth','oauth_token', oauth_access_token)
@@ -63,8 +68,14 @@ def prompt_oauth_access_token():
         config.write(configfile)
     return oauth_access_token
 
+def graceful_exit(signal, frame):
+    print "\nCya!"
+    sys.exit(0)
+
 if __name__ == '__main__':
     import ConfigParser
+
+    signal.signal(signal.SIGINT, graceful_exit)
 
     config = ConfigParser.ConfigParser()
 
@@ -73,20 +84,18 @@ if __name__ == '__main__':
         config.read(os.path.expanduser('~/.sticazzi.cfg'))
         oauth_access_token = config.get('auth', 'oauth_token')
     except:
-        prompt_oauth_access_token()
+        oauth_access_token = prompt_oauth_access_token()
 
     if oauth_access_token is None:
         sys.exit(1)
 
     news_feed = dict()
-    try:
-        graph = facebook.GraphAPI(oauth_access_token)
-        news_feed = graph.get_connections("me", "home")
-    except facebook.GraphAPIError, ex:
-        print ex
-        oauth_access_token = prompt_oauth_access_token()
-        graph = facebook.GraphAPI(oauth_access_token)
-        news_feed = graph.get_connections("me", "home")
+    while len(news_feed) == 0:
+        try:
+            news_feed = fetch_user_stream_data(oauth_access_token)
+        except facebook.GraphAPIError, ex:
+            print ex
+            oauth_access_token = prompt_oauth_access_token()
 
     if news_feed.has_key('data'):
         for new in news_feed['data']:
