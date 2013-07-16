@@ -8,6 +8,9 @@ import sys
 import facebook
 import textwrap
 import signal
+import urllib2
+from StringIO import StringIO
+from asciiporn import img2txt
 
 BASE0=244
 BASE01=240
@@ -27,7 +30,14 @@ def fetch_user_stream_data(oauth_access_token):
 def fg256(x, y):
     return u'\033[38;5;%dm%s\033[0m' % (x, y)
 
-def print_post(post):
+def get_picture(url):
+    try:
+        picture_data = urllib2.urlopen(url).read()
+        return img2txt(StringIO(picture_data), scale=3)
+    except:
+        return url
+
+def print_post(post, show_pictures):
     p = u''
     p += fg256(CYAN, post['from']['name'])
 
@@ -56,6 +66,10 @@ def print_post(post):
     p += fg256(BASE0, u' - Comments: ')
     p += fg256(GREEN, str(comments))
 
+    if show_pictures and 'picture' in post:
+        p += '\n' + get_picture(post['picture'])
+        p += '\n' + fg256(BASE0, post['picture'])
+
     print p + '\n'
 
 def prompt_oauth_access_token():
@@ -74,6 +88,8 @@ def graceful_exit(signal, frame):
 
 if __name__ == '__main__':
     import ConfigParser
+
+    show_pictures = '-p' in sys.argv
 
     signal.signal(signal.SIGINT, graceful_exit)
 
@@ -99,4 +115,4 @@ if __name__ == '__main__':
 
     if news_feed.has_key('data'):
         for new in news_feed['data']:
-            print_post(new)
+            print_post(new, show_pictures)

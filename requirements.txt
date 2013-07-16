@@ -1,1 +1,4 @@
 facebook-sdk==0.4.0
+PIL==1.1.7
+numpy==1.7.1
+asciiporn==2009.05.01
